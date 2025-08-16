@@ -13,6 +13,7 @@
             --warning-color: #f39c12;
             --light-color: #ecf0f1;
             --dark-color: #2c3e50;
+            --weekend-color: #9b59b6; /* Viola per weekend */
         }
         
         * {
@@ -199,6 +200,11 @@
             color: var(--success-color);
         }
         
+        .history-weekend {
+            color: var(--weekend-color);
+            font-weight: bold;
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -377,6 +383,16 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        .weekend-indicator {
+            display: inline-block;
+            background-color: var(--weekend-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -443,6 +459,10 @@
                         <div class="stat-card">
                             <div id="vacationDays" class="stat-value">0</div>
                             <div class="stat-label">Giorni di ferie</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="weekendDays" class="stat-value">0</div>
+                            <div class="stat-label">Giorni weekend lavorati</div>
                         </div>
                     </div>
                 </div>
@@ -797,13 +817,25 @@
                 // Arrotonda di nuovo a 2 decimali
                 workHours = Math.round(workHours * 100) / 100;
                 
-                // Calcola le ore normali e gli straordinari
-                if (workHours < 8) {
-                    todayData.regularHours = 8;
-                    todayData.overtimeHours = 0;
+                // Verifica se è un giorno di weekend
+                const dayOfWeek = checkIn.getDay(); // 0 = domenica, 6 = sabato
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                
+                if (isWeekend) {
+                    // Per i weekend, tutte le ore sono straordinari
+                    todayData.regularHours = 0;
+                    todayData.overtimeHours = workHours;
+                    todayData.isWeekendWork = true;
                 } else {
-                    todayData.regularHours = 8;
-                    todayData.overtimeHours = Math.round((workHours - 8) * 100) / 100;
+                    // Per i giorni feriali, calcola ore normali e straordinari
+                    if (workHours < 8) {
+                        todayData.regularHours = 8;
+                        todayData.overtimeHours = 0;
+                    } else {
+                        todayData.regularHours = 8;
+                        todayData.overtimeHours = Math.round((workHours - 8) * 100) / 100;
+                    }
+                    todayData.isWeekendWork = false;
                 }
             }
             
@@ -825,10 +857,15 @@
                     
                     if (todayData.workHours !== undefined) {
                         summaryHTML += `<p><strong>Ore lavorative:</strong> ${todayData.workHours} ore</p>`;
-                        summaryHTML += `<p><strong>Ore normali:</strong> ${todayData.regularHours} ore</p>`;
                         
-                        if (todayData.overtimeHours > 0) {
-                            summaryHTML += `<p><strong>Straordinari:</strong> ${todayData.overtimeHours} ore</p>`;
+                        if (todayData.isWeekendWork) {
+                            summaryHTML += `<p><strong>Tutte le ore sono straordinari:</strong> ${todayData.overtimeHours} ore</p>`;
+                        } else {
+                            summaryHTML += `<p><strong>Ore normali:</strong> ${todayData.regularHours} ore</p>`;
+                            
+                            if (todayData.overtimeHours > 0) {
+                                summaryHTML += `<p><strong>Straordinari:</strong> ${todayData.overtimeHours} ore</p>`;
+                            }
                         }
                         
                         if (todayData.break) {
@@ -869,26 +906,39 @@
                     const dayData = allData[date];
                     const dateObj = new Date(date);
                     const formattedDate = formatDate(dateObj);
+                    const dayOfWeek = dateObj.getDay(); // 0 = domenica, 6 = sabato
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                     
                     historyHTML += '<div class="history-item">';
                     historyHTML += '<div class="history-item-content">';
-                    historyHTML += `<div class="history-date">${formattedDate}</div>`;
+                    
+                    // Aggiungi l'indicatore di weekend se necessario
+                    if (isWeekend) {
+                        historyHTML += `<div class="history-date">${formattedDate} <span class="weekend-indicator">WEEKEND</span></div>`;
+                    } else {
+                        historyHTML += `<div class="history-date">${formattedDate}</div>`;
+                    }
                     
                     if (dayData.checkIn) {
                         if (dayData.checkOut) {
                             if (dayData.workHours !== undefined) {
-                                historyHTML += `<div class="history-hours">${dayData.regularHours}h`;
-                                if (dayData.overtimeHours > 0) {
-                                    historyHTML += ` + <span class="history-overtime">${dayData.overtimeHours}h straord.</span>`;
+                                if (dayData.isWeekendWork) {
+                                    historyHTML += `<div class="history-weekend">${dayData.overtimeHours}h straordinari</div>`;
+                                } else {
+                                    historyHTML += `<div class="history-hours">${dayData.regularHours}h`;
+                                    if (dayData.overtimeHours > 0) {
+                                        historyHTML += ` + <span class="history-overtime">${dayData.overtimeHours}h straord.</span>`;
+                                    }
+                                    historyHTML += '</div>';
                                 }
-                                historyHTML += '</div>';
                             } else {
                                 historyHTML += '<div class="history-hours">Dati incompleti</div>';
                             }
                         } else {
                             historyHTML += '<div class="history-hours">Entrata registrata</div>';
                         }
-                    } else {
+                    } else if (!isWeekend) {
+                        // Mostra ferie solo per i giorni feriali
                         historyHTML += '<div class="history-vacation">Ferie (F)</div>';
                     }
                     
@@ -915,6 +965,7 @@
                     document.getElementById('totalOvertime').textContent = '0';
                     document.getElementById('workDays').textContent = '0';
                     document.getElementById('vacationDays').textContent = '0';
+                    document.getElementById('weekendDays').textContent = '0';
                     return;
                 }
                 
@@ -925,6 +976,7 @@
                 let totalOvertime = 0;
                 let workDays = 0;
                 let vacationDays = 0;
+                let weekendDays = 0;
                 
                 // Filtra solo i giorni del mese corrente
                 const currentMonth = new Date().getMonth();
@@ -934,17 +986,25 @@
                     const dateObj = new Date(date);
                     if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
                         const dayData = allData[date];
+                        const dayOfWeek = dateObj.getDay(); // 0 = domenica, 6 = sabato
+                        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                         
                         if (dayData.checkIn) {
                             if (dayData.regularHours) {
                                 totalHours += dayData.regularHours;
-                                workDays++;
+                                if (!isWeekend) {
+                                    workDays++;
+                                }
                             }
                             
                             if (dayData.overtimeHours) {
                                 totalOvertime += dayData.overtimeHours;
+                                if (isWeekend && dayData.isWeekendWork) {
+                                    weekendDays++;
+                                }
                             }
-                        } else {
+                        } else if (!isWeekend) {
+                            // Conta come ferie solo i giorni feriali senza timbratura
                             vacationDays++;
                         }
                     }
@@ -954,6 +1014,7 @@
                 document.getElementById('totalOvertime').textContent = totalOvertime.toFixed(1);
                 document.getElementById('workDays').textContent = workDays;
                 document.getElementById('vacationDays').textContent = vacationDays;
+                document.getElementById('weekendDays').textContent = weekendDays;
             }
             
             function switchTab(tabId) {
