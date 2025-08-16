@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timbratura Presenze</title>
+    <style>
+        :root {
+            --primary-color: #c0392b; /* Rosso primario */
+            --secondary-color: #e74c3c; /* Rosso secondario */
+            --success-color: #27ae60; /* Verde per IN */
+            --danger-color: #e74c3c; /* Rosso per OUT */
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #229954;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d35400;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status-in {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-out {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-neutral {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        
+        .time-display {
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            margin-bottom: 15px;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            text-align: right;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-date {
+            font-weight: bold;
+        }
+        
+        .history-hours {
+            color: var(--primary-color);
+        }
+        
+        .history-overtime {
+            color: var(--warning-color);
+        }
+        
+        .history-vacation {
+            color: var(--success-color);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Stili per il tasto IN/OUT tondo e grande */
+        .action-button-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .action-button {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .action-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .action-button.in {
+            background-color: var(--success-color);
+        }
+        
+        .action-button.in:hover {
+            background-color: #229954;
+        }
+        
+        .action-button.out {
+            background-color: var(--danger-color);
+        }
+        
+        .action-button.out:hover {
+            background-color: #c0392b;
+        }
+        
+        .action-button svg {
+            margin-bottom: 10px;
+        }
+        
+        .action-button-text {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        /* Stili per il pulsante di cancellazione */
+        .delete-button {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 10px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .delete-button:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+            transform: scale(1.1);
+        }
+        
+        .history-item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .today-summary-container {
+            position: relative;
+        }
+        
+        .delete-today-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .delete-today-button:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+            transform: scale(1.1);
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Timbratura Presenze</h1>
+            <p>Sistema di tracciamento ore lavorative</p>
+        </header>
+        
+        <div class="card">
+            <div id="status" class="status status-neutral">
+                Non hai ancora timbrato oggi
+            </div>
+            
+            <div id="currentTime" class="time-display">
+                --:--:--
+            </div>
+            
+            <div class="action-button-container">
+                <button id="actionButton" class="action-button in">
+                    <!-- Icona IN: persona che entra in una porta -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="48px" height="48px">
+                        <path d="M0 0h24v24H0V0z" fill="none"/>
+                        <path d="M10 17v-3H3v-4h7V7l5 5-5 5zm10-9v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4V4H4c-2.21 0-4 1.79-4 4v12c0 2.21 1.79 4 4 4h14c2.21 0 4-1.79 4-4V8h-2z"/>
+                    </svg>
+                    <span class="action-button-text">IN</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="today">Oggi</button>
+                    <button class="tab-button" data-tab="stats">Statistiche</button>
+                    <button class="tab-button" data-tab="history">Storico</button>
+                </div>
+                
+                <div id="today" class="tab-content active">
+                    <h3>Riepilogo di oggi</h3>
+                    <div class="today-summary-container">
+                        <button id="deleteTodayButton" class="delete-today-button" title="Cancella dati di oggi">✕</button>
+                        <div id="todaySummary">
+                            <p>Nessun dato disponibile per oggi</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="stats" class="tab-content">
+                    <h3>Statistiche mensili</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div id="totalHours" class="stat-value">0</div>
+                            <div class="stat-label">Ore totali</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="totalOvertime" class="stat-value">0</div>
+                            <div class="stat-label">Straordinari</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="workDays" class="stat-value">0</div>
+                            <div class="stat-label">Giorni lavorati</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="vacationDays" class="stat-value">0</div>
+                            <div class="stat-label">Giorni di ferie</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="history" class="tab-content">
+                    <h3>Cronologia presenze</h3>
+                    <div id="historyList">
+                        <p>Nessun dato storico disponibile</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modale per la conferma di uscita -->
+    <div id="confirmExitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Conferma uscita</h3>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler timbrare l'uscita?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelExitBtn" class="btn btn-primary">Annulla</button>
+                <button id="confirmExitBtn" class="btn btn-danger">Conferma</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modale per la pausa -->
+    <div id="breakModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Informazioni sulla pausa</h3>
+            </div>
+            <div class="modal-body">
+                <p>Hai fatto pausa oggi?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="noBreakBtn" class="btn btn-danger">No</button>
+                <button id="yesBreakBtn" class="btn btn-primary">Sì</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modale per tipo di pausa -->
+    <div id="breakTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tipo di pausa</h3>
+            </div>
+            <div class="modal-body">
+                <p>Quale tipo di pausa hai fatto?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="halfBreakBtn" class="btn btn-warning">Mezza pausa (30 min)</button>
+                <button id="fullBreakBtn" class="btn btn-success">Pausa intera (1 ora)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modale per conferma cancellazione -->
+    <div id="confirmDeleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Conferma cancellazione</h3>
+            </div>
+            <div class="modal-body">
+                <p id="deleteConfirmationText">Sei sicuro di voler cancellare i dati di questa giornata?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDeleteBtn" class="btn btn-primary">Annulla</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">Cancella</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notifica -->
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementi DOM
+            const actionButton = document.getElementById('actionButton');
+            const statusDiv = document.getElementById('status');
+            const currentTimeDiv = document.getElementById('currentTime');
+            const breakModal = document.getElementById('breakModal');
+            const breakTypeModal = document.getElementById('breakTypeModal');
+            const confirmExitModal = document.getElementById('confirmExitModal');
+            const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+            const todaySummary = document.getElementById('todaySummary');
+            const historyList = document.getElementById('historyList');
+            const deleteTodayButton = document.getElementById('deleteTodayButton');
+            const notification = document.getElementById('notification');
+            
+            // Pulsanti modali
+            const noBreakBtn = document.getElementById('noBreakBtn');
+            const yesBreakBtn = document.getElementById('yesBreakBtn');
+            const halfBreakBtn = document.getElementById('halfBreakBtn');
+            const fullBreakBtn = document.getElementById('fullBreakBtn');
+            const cancelExitBtn = document.getElementById('cancelExitBtn');
+            const confirmExitBtn = document.getElementById('confirmExitBtn');
+            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            const deleteConfirmationText = document.getElementById('deleteConfirmationText');
+            
+            // Tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            // Variabili globali
+            let currentState = 'out'; // 'in' o 'out'
+            let todayData = {};
+            let currentCheckInTime = null;
+            let dateToDelete = null;
+            
+            // Inizializzazione
+            init();
+            
+            function init() {
+                // Carica i dati salvati
+                loadData();
+                
+                // Aggiorna l'orario corrente
+                updateCurrentTime();
+                setInterval(updateCurrentTime, 1000);
+                
+                // Imposta gli event listeners
+                actionButton.addEventListener('click', handleActionButton);
+                noBreakBtn.addEventListener('click', () => handleBreakSelection('none'));
+                yesBreakBtn.addEventListener('click', () => showBreakTypeModal());
+                halfBreakBtn.addEventListener('click', () => handleBreakSelection('half'));
+                fullBreakBtn.addEventListener('click', () => handleBreakSelection('full'));
+                cancelExitBtn.addEventListener('click', () => confirmExitModal.style.display = 'none');
+                confirmExitBtn.addEventListener('click', confirmExit);
+                cancelDeleteBtn.addEventListener('click', () => confirmDeleteModal.style.display = 'none');
+                confirmDeleteBtn.addEventListener('click', deleteDayData);
+                deleteTodayButton.addEventListener('click', () => prepareDeleteToday());
+                
+                // Tab navigation
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tabId = button.getAttribute('data-tab');
+                        switchTab(tabId);
+                    });
+                });
+                
+                // Aggiorna l'interfaccia
+                updateUI();
+                updateTodaySummary();
+                updateHistory();
+                updateStats();
+            }
+            
+            function loadData() {
+                // Recupera i dati dal localStorage
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    
+                    // Ottieni la data di oggi in formato YYYY-MM-DD
+                    const today = new Date().toISOString().split('T')[0];
+                    
+                    // Verifica se ci sono dati per oggi
+                    if (parsedData[today]) {
+                        todayData = parsedData[today];
+                        
+                        if (todayData.checkIn && !todayData.checkOut) {
+                            currentState = 'in';
+                            currentCheckInTime = new Date(todayData.checkIn);
+                        } else if (todayData.checkIn && todayData.checkOut) {
+                            currentState = 'out';
+                        }
+                    }
+                }
+            }
+            
+            function saveData() {
+                // Ottieni i dati esistenti o crea un nuovo oggetto
+                let allData = {};
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (savedData) {
+                    allData = JSON.parse(savedData);
+                }
+                
+                // Ottieni la data di oggi in formato YYYY-MM-DD
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Salva i dati di oggi
+                allData[today] = todayData;
+                
+                // Salva nel localStorage
+                localStorage.setItem('workTimeTracker', JSON.stringify(allData));
+            }
+            
+            function updateCurrentTime() {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');
+                currentTimeDiv.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            
+            function updateUI() {
+                if (currentState === 'in') {
+                    // Cambia il pulsante in OUT
+                    actionButton.innerHTML = `
+                        <!-- Icona OUT: persona che esce da una porta -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="48px" height="48px">
+                            <path d="M0 0h24v24H0V0z" fill="none"/>
+                            <path d="M14 7l-5 5 5 5v-3h7v-4h-7V7z"/>
+                            <path d="M4 4v16h12v-2H6V6h10V4H4z"/>
+                        </svg>
+                        <span class="action-button-text">OUT</span>
+                    `;
+                    actionButton.className = 'action-button out';
+                    statusDiv.textContent = 'Sei attualmente in azienda';
+                    statusDiv.className = 'status status-in';
+                } else {
+                    // Cambia il pulsante in IN
+                    actionButton.innerHTML = `
+                        <!-- Icona IN: persona che entra in una porta -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="48px" height="48px">
+                            <path d="M0 0h24v24H0V0z" fill="none"/>
+                            <path d="M10 17v-3H3v-4h7V7l5 5-5 5zm10-9v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4V4H4c-2.21 0-4 1.79-4 4v12c0 2.21 1.79 4 4 4h14c2.21 0 4-1.79 4-4V8h-2z"/>
+                        </svg>
+                        <span class="action-button-text">IN</span>
+                    `;
+                    actionButton.className = 'action-button in';
+                    
+                    if (todayData.checkIn && todayData.checkOut) {
+                        statusDiv.textContent = 'Hai già timbrato l\'uscita oggi';
+                        statusDiv.className = 'status status-neutral';
+                    } else {
+                        statusDiv.textContent = 'Non hai ancora timbrato oggi';
+                        statusDiv.className = 'status status-neutral';
+                    }
+                }
+            }
+            
+            function handleActionButton() {
+                if (currentState === 'out') {
+                    // Timbra entrata
+                    const now = new Date();
+                    currentCheckInTime = now;
+                    
+                    todayData.checkIn = now.toISOString();
+                    currentState = 'in';
+                    
+                    saveData();
+                    updateUI();
+                } else {
+                    // Mostra il modale di conferma per l'uscita
+                    confirmExitModal.style.display = 'block';
+                }
+            }
+            
+            function confirmExit() {
+                // Chiudi il modale di conferma
+                confirmExitModal.style.display = 'none';
+                
+                // Timbra uscita
+                const now = new Date();
+                todayData.checkOut = now.toISOString();
+                currentState = 'out';
+                
+                saveData();
+                updateUI();
+                
+                // Calcola le ore lavorative
+                calculateWorkHours();
+                
+                // Verifica se le ore lavorative sono inferiori a 0.5
+                if (todayData.workHours < 0.5) {
+                    // Cancella i dati di oggi
+                    cancelTodayData();
+                    showNotification('Hai lavorato meno di mezz\'ora. I dati sono stati cancellati.');
+                } else {
+                    // Mostra il modale per la pausa
+                    breakModal.style.display = 'block';
+                }
+            }
+            
+            function showBreakTypeModal() {
+                breakModal.style.display = 'none';
+                breakTypeModal.style.display = 'block';
+            }
+            
+            function handleBreakSelection(breakType) {
+                // Chiudi i modali
+                breakModal.style.display = 'none';
+                breakTypeModal.style.display = 'none';
+                
+                // Salva il tipo di pausa
+                todayData.break = breakType;
+                
+                // Ricalcola le ore lavorative con la pausa
+                calculateWorkHours();
+                
+                // Salva i dati e aggiorna l'interfaccia
+                saveData();
+                updateTodaySummary();
+                updateHistory();
+                updateStats();
+            }
+            
+            function calculateWorkHours() {
+                if (!todayData.checkIn || !todayData.checkOut) {
+                    return;
+                }
+                
+                const checkIn = new Date(todayData.checkIn);
+                const checkOut = new Date(todayData.checkOut);
+                
+                // Calcola le ore di lavoro per difetto
+                let workStart = new Date(checkIn);
+                workStart.setHours(8, 0, 0, 0); // Imposta alle 8:00
+                
+                // Se l'orario di entrata è dopo le 8:00, usa quell'orario
+                if (checkIn > workStart) {
+                    workStart = new Date(checkIn);
+                }
+                
+                let workEnd = new Date(checkOut);
+                workEnd.setHours(17, 0, 0, 0); // Imposta alle 17:00
+                
+                // Se l'orario di uscita è prima delle 17:00, usa quell'orario
+                if (checkOut < workEnd) {
+                    workEnd = new Date(checkOut);
+                }
+                
+                // Calcola la differenza in millisecondi
+                const diffMs = workEnd - workStart;
+                
+                // Converti in ore
+                let workHours = diffMs / (1000 * 60 * 60);
+                
+                // Arrotonda a 2 decimali
+                workHours = Math.round(workHours * 100) / 100;
+                
+                // Salva le ore lavorative (prima di sottrarre la pausa)
+                todayData.workHours = workHours;
+                
+                // Gestisci la pausa
+                if (todayData.break === 'half') {
+                    workHours -= 0.5;
+                } else if (todayData.break === 'full') {
+                    workHours -= 1;
+                }
+                
+                // Arrotonda di nuovo a 2 decimali
+                workHours = Math.round(workHours * 100) / 100;
+                
+                // Calcola le ore normali e gli straordinari
+                if (workHours < 8) {
+                    todayData.regularHours = 8;
+                    todayData.overtimeHours = 0;
+                } else {
+                    todayData.regularHours = 8;
+                    todayData.overtimeHours = Math.round((workHours - 8) * 100) / 100;
+                }
+            }
+            
+            function updateTodaySummary() {
+                if (!todayData.checkIn) {
+                    todaySummary.innerHTML = '<p>Nessun dato disponibile per oggi</p>';
+                    return;
+                }
+                
+                const checkInTime = new Date(todayData.checkIn);
+                const checkInStr = formatTime(checkInTime);
+                
+                let summaryHTML = `<p><strong>Entrata:</strong> ${checkInStr}</p>`;
+                
+                if (todayData.checkOut) {
+                    const checkOutTime = new Date(todayData.checkOut);
+                    const checkOutStr = formatTime(checkOutTime);
+                    summaryHTML += `<p><strong>Uscita:</strong> ${checkOutStr}</p>`;
+                    
+                    if (todayData.workHours !== undefined) {
+                        summaryHTML += `<p><strong>Ore lavorative:</strong> ${todayData.workHours} ore</p>`;
+                        summaryHTML += `<p><strong>Ore normali:</strong> ${todayData.regularHours} ore</p>`;
+                        
+                        if (todayData.overtimeHours > 0) {
+                            summaryHTML += `<p><strong>Straordinari:</strong> ${todayData.overtimeHours} ore</p>`;
+                        }
+                        
+                        if (todayData.break) {
+                            let breakStr = '';
+                            if (todayData.break === 'half') {
+                                breakStr = 'Mezza pausa (30 min)';
+                            } else if (todayData.break === 'full') {
+                                breakStr = 'Pausa intera (1 ora)';
+                            }
+                            summaryHTML += `<p><strong>Pausa:</strong> ${breakStr}</p>`;
+                        }
+                    }
+                } else {
+                    summaryHTML += '<p><em>Uscita non ancora timbrata</em></p>';
+                }
+                
+                todaySummary.innerHTML = summaryHTML;
+            }
+            
+            function updateHistory() {
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (!savedData) {
+                    historyList.innerHTML = '<p>Nessun dato storico disponibile</p>';
+                    return;
+                }
+                
+                const allData = JSON.parse(savedData);
+                const dates = Object.keys(allData).sort().reverse();
+                
+                if (dates.length === 0) {
+                    historyList.innerHTML = '<p>Nessun dato storico disponibile</p>';
+                    return;
+                }
+                
+                let historyHTML = '';
+                
+                dates.forEach(date => {
+                    const dayData = allData[date];
+                    const dateObj = new Date(date);
+                    const formattedDate = formatDate(dateObj);
+                    
+                    historyHTML += '<div class="history-item">';
+                    historyHTML += '<div class="history-item-content">';
+                    historyHTML += `<div class="history-date">${formattedDate}</div>`;
+                    
+                    if (dayData.checkIn) {
+                        if (dayData.checkOut) {
+                            if (dayData.workHours !== undefined) {
+                                historyHTML += `<div class="history-hours">${dayData.regularHours}h`;
+                                if (dayData.overtimeHours > 0) {
+                                    historyHTML += ` + <span class="history-overtime">${dayData.overtimeHours}h straord.</span>`;
+                                }
+                                historyHTML += '</div>';
+                            } else {
+                                historyHTML += '<div class="history-hours">Dati incompleti</div>';
+                            }
+                        } else {
+                            historyHTML += '<div class="history-hours">Entrata registrata</div>';
+                        }
+                    } else {
+                        historyHTML += '<div class="history-vacation">Ferie (F)</div>';
+                    }
+                    
+                    historyHTML += '</div>';
+                    historyHTML += `<button class="delete-button" data-date="${date}" title="Cancella dati di questo giorno">✕</button>`;
+                    historyHTML += '</div>';
+                });
+                
+                historyList.innerHTML = historyHTML;
+                
+                // Aggiungi event listener per i pulsanti di cancellazione
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const date = this.getAttribute('data-date');
+                        prepareDeleteDay(date);
+                    });
+                });
+            }
+            
+            function updateStats() {
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (!savedData) {
+                    document.getElementById('totalHours').textContent = '0';
+                    document.getElementById('totalOvertime').textContent = '0';
+                    document.getElementById('workDays').textContent = '0';
+                    document.getElementById('vacationDays').textContent = '0';
+                    return;
+                }
+                
+                const allData = JSON.parse(savedData);
+                const dates = Object.keys(allData);
+                
+                let totalHours = 0;
+                let totalOvertime = 0;
+                let workDays = 0;
+                let vacationDays = 0;
+                
+                // Filtra solo i giorni del mese corrente
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                
+                dates.forEach(date => {
+                    const dateObj = new Date(date);
+                    if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
+                        const dayData = allData[date];
+                        
+                        if (dayData.checkIn) {
+                            if (dayData.regularHours) {
+                                totalHours += dayData.regularHours;
+                                workDays++;
+                            }
+                            
+                            if (dayData.overtimeHours) {
+                                totalOvertime += dayData.overtimeHours;
+                            }
+                        } else {
+                            vacationDays++;
+                        }
+                    }
+                });
+                
+                document.getElementById('totalHours').textContent = totalHours.toFixed(1);
+                document.getElementById('totalOvertime').textContent = totalOvertime.toFixed(1);
+                document.getElementById('workDays').textContent = workDays;
+                document.getElementById('vacationDays').textContent = vacationDays;
+            }
+            
+            function switchTab(tabId) {
+                // Rimuovi la classe active da tutti i pulsanti e contenuti
+                tabButtons.forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Aggiungi la classe active al pulsante e al contenuto selezionati
+                document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            }
+            
+            function formatDate(date) {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('it-IT', options);
+            }
+            
+            function formatTime(date) {
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            
+            function prepareDeleteToday() {
+                const today = new Date().toISOString().split('T')[0];
+                prepareDeleteDay(today);
+            }
+            
+            function prepareDeleteDay(date) {
+                dateToDelete = date;
+                const dateObj = new Date(date);
+                const formattedDate = formatDate(dateObj);
+                
+                deleteConfirmationText.textContent = `Sei sicuro di voler cancellare i dati del ${formattedDate}?`;
+                confirmDeleteModal.style.display = 'block';
+            }
+            
+            function deleteDayData() {
+                if (!dateToDelete) return;
+                
+                // Ottieni i dati esistenti
+                let allData = {};
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (savedData) {
+                    allData = JSON.parse(savedData);
+                }
+                
+                // Rimuovi i dati per il giorno specificato
+                delete allData[dateToDelete];
+                
+                // Salva i dati aggiornati
+                localStorage.setItem('workTimeTracker', JSON.stringify(allData));
+                
+                // Se abbiamo cancellato i dati di oggi, aggiorna le variabili globali
+                const today = new Date().toISOString().split('T')[0];
+                if (dateToDelete === today) {
+                    todayData = {};
+                    currentState = 'out';
+                    currentCheckInTime = null;
+                }
+                
+                // Chiudi il modale
+                confirmDeleteModal.style.display = 'none';
+                
+                // Mostra notifica
+                const dateObj = new Date(dateToDelete);
+                const formattedDate = formatDate(dateObj);
+                showNotification(`Dati del ${formattedDate} cancellati con successo.`);
+                
+                // Aggiorna l'interfaccia
+                updateUI();
+                updateTodaySummary();
+                updateHistory();
+                updateStats();
+                
+                // Resetta la variabile
+                dateToDelete = null;
+            }
+            
+            function cancelTodayData() {
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Ottieni i dati esistenti
+                let allData = {};
+                const savedData = localStorage.getItem('workTimeTracker');
+                if (savedData) {
+                    allData = JSON.parse(savedData);
+                }
+                
+                // Rimuovi i dati per oggi
+                delete allData[today];
+                
+                // Salva i dati aggiornati
+                localStorage.setItem('workTimeTracker', JSON.stringify(allData));
+                
+                // Resetta le variabili globali
+                todayData = {};
+                currentState = 'out';
+                currentCheckInTime = null;
+                
+                // Aggiorna l'interfaccia
+                updateUI();
+                updateTodaySummary();
+                updateHistory();
+                updateStats();
+            }
+            
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
